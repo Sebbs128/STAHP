@@ -34,14 +34,14 @@ The quicker the use of these services can be reported for malicious activity to 
 
 - More cloud providers and services
   - Currently only specifically identifies AWS S3 and Azure Blobs
-- Support for `nslookup` with non-authoritative answers to identify and report on web hosting providers
-- Microsoft Security Response Center offers an API at https://msrc.microsoft.com/report/developer for reporting abuse of Microsoft online services. It would be good to integrate with this to allow single-step reporting within STAHP of any and all Azure services found within a trace.
-- Identify and follow JavaScript-based redirections (`window.location`)
+- [[Issue #2]](https://github.com/Sebbs128/STAHP/issues/2) Support for `nslookup` with non-authoritative answers to identify and report on web hosting providers
+- [[Issue #5]](https://github.com/Sebbs128/STAHP/issues/5) Microsoft Security Response Center offers an API at https://msrc.microsoft.com/report/developer for reporting abuse of Microsoft online services. It would be good to integrate with this to allow single-step reporting within STAHP of any and all Azure services found within a trace.
+- [[Issue #3]](https://github.com/Sebbs128/STAHP/issues/3) Identify and follow JavaScript-based redirections (`window.location`)
 - Web interface
-- Display hops in the trace in real-time
+- [[Issue #4]](https://github.com/Sebbs128/STAHP/issues/4) Display hops in the trace in real-time
 - Improve known-host matching
   - Related but partly opposite to this is investigating determining if a legit URL is found in the trace, such as URL obfuscators in email hosts/applications
-- Automated builds of console application (Win x86/x64/ARM(?), MacOS, Linux)
+- [[Issue #1]](https://github.com/Sebbs128/STAHP/issues/1) Automated builds of console application (Win x86/x64/ARM(?), MacOS, Linux)
   - Single-file and self-contained executable would be ideal. See https://docs.microsoft.com/en-us/dotnet/core/deploying/single-file/overview#publish-a-single-file-app---sample-project-file
 - Publish `Stahp.Core` as a nuget package to allow other projects to make use of it.
   - Further to this, dependencies for whois, html parsing, nslookup etc could/may be updated, abstracted, or replaced for better framework (ie. .NET target) support
