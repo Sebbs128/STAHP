@@ -34,7 +34,7 @@ The quicker the use of these services can be reported for malicious activity to 
 
 - More cloud providers and services
   - Currently only specifically identifies AWS S3 and Azure Blobs
-- [[Issue #2]](https://github.com/Sebbs128/STAHP/issues/2) Support for `nslookup` with non-authoritative answers to identify and report on web hosting providers
+- [[Issue #2]](https://github.com/Sebbs128/STAHP/issues/2) Support for `nslookup` with aliases to identify and report on web hosting providers
 - [[Issue #5]](https://github.com/Sebbs128/STAHP/issues/5) Microsoft Security Response Center offers an API at https://msrc.microsoft.com/report/developer for reporting abuse of Microsoft online services. It would be good to integrate with this to allow single-step reporting within STAHP of any and all Azure services found within a trace.
 - [[Issue #3]](https://github.com/Sebbs128/STAHP/issues/3) Identify and follow JavaScript-based redirections (`window.location`)
 - Web interface
