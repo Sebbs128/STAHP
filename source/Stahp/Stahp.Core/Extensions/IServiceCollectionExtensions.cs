@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
+using Stahp.Core.HostTypes;
+using Stahp.Core.HttpResponseProcessing;
+
 using Whois;
 
 namespace Stahp.Core
@@ -15,6 +18,12 @@ namespace Stahp.Core
                     AllowAutoRedirect = false
                 });
             return services
+                .AddMemoryCache()
+                .AddTransient<IHostFactory, HostFactory>()
+                .AddTransient<IHttpResponseProcessor, HtmlRedirectProcessor>()
+                .AddTransient<IHttpResponseProcessor, HttpRedirectProcessor>()
+                // DefaultHttpResponseProcessor must be added last, as its CanProcess() will always return true
+                .AddTransient<IHttpResponseProcessor, DefaultHttpResponseProcessor>()
                 .AddTransient(_ =>
                 {
                     WhoisLookup? client = new WhoisLookup();

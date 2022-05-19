@@ -4,7 +4,7 @@ using System.Net;
 
 namespace Stahp.Core
 {
-    public class TraceResult
+    public class TraceHop
     {
         public Uri Url { get; set; }
         public HttpStatusCode HttpStatusCode { get; set; }
@@ -18,9 +18,9 @@ namespace Stahp.Core
         // Who the website is hosted by
         public IHost? WebHost { get; set; }
 
-        public TraceResult? NextHop { get; set; }
+        public TraceHop? NextHop { get; set; }
 
-        public TraceResult(Uri url, HttpStatusCode httpStatusCode)
+        public TraceHop(Uri url, HttpStatusCode httpStatusCode)
         {
             Url = url;
             HttpStatusCode = httpStatusCode;

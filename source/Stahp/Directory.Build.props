@@ -1,0 +1,9 @@
+<Project>
+	<PropertyGroup>
+		<RepositoryUrl>https://github.com/Sebbs128/STAHP</RepositoryUrl>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<ProjectUrl>https://github.com/Sebbs128/STAHP</ProjectUrl>
+	</PropertyGroup>
+</Project>

@@ -67,46 +67,61 @@ namespace Stahp.Console
 
         public async Task DoUrlTracing(Uri uri)
         {
-            TraceResult? traceResult = null;
-            await _console.Status()
+            // can't currently combine dynamic display (ie. Spectre.Console.Status()) with static rendering such as markup and tables
+            // see https://github.com/spectreconsole/spectre.console/issues/295#issuecomment-797230737
+            // HACK: we can have a Spectre.Console.Status() indicator by creating one that only runs until the next hop is ready
+            CancellationTokenSource cts = DisplayCancellableStatusIndicator();
+            
+            await foreach (TraceHop? traceHop in _requestTracer.TraceUrlAsync(uri))
+            {
+                cts.Cancel();
+                PrintHopDetails(traceHop);
+
+                cts = DisplayCancellableStatusIndicator();
+            }
+        }
+
+        private CancellationTokenSource DisplayCancellableStatusIndicator()
+        {
+            CancellationTokenSource cts = new CancellationTokenSource();
+            // don't await, because the caller needs to tell the status indicator when to stop
+            _console.Status()
                 .StartAsync("Tracing web requests...", async ctx =>
                 {
-                    traceResult = await _requestTracer.TraceUrl(uri);
+                    while (!cts.Token.IsCancellationRequested)
+                    {
+                        await Task.Delay(1000, cts.Token);
+                    }
                 });
+            return cts;
+        }
 
-            TraceResult? resultToPrint = traceResult;
-
-            while (resultToPrint != null)
-            {
-                _console.Markup("[{0}]{1}[/]  ",
-                    resultToPrint.HttpStatusCode switch
-                    {
-                        < HttpStatusCode.Moved => "green",
-                        (>= HttpStatusCode.Moved) and(<= HttpStatusCode.PermanentRedirect) => "orange1",
-                        _ => "red"
-                    },
-                    ((int)resultToPrint.HttpStatusCode).ToString());
-                _console.MarkupLine(resultToPrint.Url.ToString());
-
-                _console.Write(PrintHost(resultToPrint.DomainHost));
-
-                if (resultToPrint.Redirects)
+        private void PrintHopDetails(TraceHop traceHop)
+        {
+            _console.Markup("[{0}]{1}[/]  ",
+                traceHop.HttpStatusCode switch
                 {
-                    _console.Markup(resultToPrint.HttpStatusCode switch
-                    {
-                        (>= HttpStatusCode.Moved) and (<= HttpStatusCode.PermanentRedirect) => 
-                            $"HTTP {(int)resultToPrint.HttpStatusCode} ({resultToPrint.HttpStatusCode})",
-                        _ => "HTML"
-                    });
-                    _console.MarkupLine(" Redirects to...");
-                }
+                    < HttpStatusCode.Moved => "green",
+                    (>= HttpStatusCode.Moved) and (<= HttpStatusCode.PermanentRedirect) => "orange1",
+                    _ => "red"
+                },
+                ((int)traceHop.HttpStatusCode).ToString());
+            _console.MarkupLine(traceHop.Url.ToString());
 
-                resultToPrint = resultToPrint.NextHop;
+            _console.Write(PrintHost(traceHop.DomainHost));
 
-                if (resultToPrint is not null)
-                    _console.Write(new Rule());
+            if (traceHop.Redirects)
+            {
+                _console.Markup(traceHop.HttpStatusCode switch
+                {
+                    (>= HttpStatusCode.Moved) and (<= HttpStatusCode.PermanentRedirect) =>
+                        $"HTTP {(int)traceHop.HttpStatusCode} ({traceHop.HttpStatusCode})",
+                    _ => "HTML"
+                });
+                _console.MarkupLine(" Redirects to...");
+
+                _console.Write(new Rule());
             }
-
         }
 
         private IRenderable PrintHost(IHost? domainHost)

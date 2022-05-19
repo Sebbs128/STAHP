@@ -4,6 +4,6 @@ namespace Stahp.Core
 {
     public interface IRequestTracer
     {
-        Task<TraceResult> TraceUrl([NotNull] Uri url);
+        IAsyncEnumerable<TraceHop> TraceUrlAsync(Uri url);
     }
 }
