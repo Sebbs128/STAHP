@@ -79,6 +79,8 @@ namespace Stahp.Console
 
                 cts = DisplayCancellableStatusIndicator();
             }
+
+            cts.Cancel();
         }
 
         private CancellationTokenSource DisplayCancellableStatusIndicator()
