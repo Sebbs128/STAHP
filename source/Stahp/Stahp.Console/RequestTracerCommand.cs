@@ -107,10 +107,13 @@ namespace Stahp.Console
                     (>= HttpStatusCode.Moved) and (<= HttpStatusCode.PermanentRedirect) => "orange1",
                     _ => "red"
                 },
-                ((int)traceHop.HttpStatusCode).ToString());
+                traceHop.HttpStatusCode.HasValue 
+                    ? ((int)traceHop.HttpStatusCode).ToString()
+                    : traceHop.ErrorMessage ?? "Trace result was not found");
             _console.MarkupLine(traceHop.Url.ToString());
 
-            _console.Write(PrintHost(traceHop.DomainHost));
+            if (traceHop.DomainHost is not null)
+                _console.Write(PrintHosts(traceHop));
 
             if (traceHop.Redirects)
             {
@@ -126,24 +129,26 @@ namespace Stahp.Console
             }
         }
 
-        private IRenderable PrintHost(IHost? domainHost)
+        private IRenderable PrintHosts(TraceHop traceHop)
         {
             Table? table = new Table()
                 .Border(TableBorder.Minimal);
 
             List<TableColumn>? columns = new List<TableColumn>()
             {
+                new TableColumn("Host Type"),
                 new TableColumn("Host"),
                 new TableColumn("Host Site") { NoWrap = true },
             };
 
-            List<IRenderable>? rowValues = new List<IRenderable>()
+            List<IRenderable>? domainHostRowValues = new List<IRenderable>()
             {
-                new Markup(domainHost?.HostName ?? string.Empty),
-                new Markup(domainHost?.HostUrl ?? string.Empty)
+                new Markup("Domain"),
+                new Markup(traceHop.DomainHost?.HostName ?? string.Empty),
+                new Markup(traceHop.DomainHost?.HostUrl ?? string.Empty)
             };
 
-            switch (domainHost)
+            switch (traceHop.DomainHost)
             {
                 case AzureStorageBlobHost azureStorageBlobHost:
                     columns.AddRange(new[]
@@ -151,7 +156,7 @@ namespace Stahp.Console
                         new TableColumn("Storage Account"),
                         new TableColumn("Container")
                     });
-                    rowValues.AddRange(new[]
+                    domainHostRowValues.AddRange(new[]
                     {
                         new Markup(azureStorageBlobHost.AccountName),
                         new Markup(azureStorageBlobHost.ContainerName)
@@ -164,7 +169,7 @@ namespace Stahp.Console
                         new TableColumn("Region"),
                         new TableColumn("Bucket")
                     });
-                    rowValues.AddRange(new[]
+                    domainHostRowValues.AddRange(new[]
                     {
                         new Markup(amazonS3BucketHost.AbuseContact),
                         new Markup(amazonS3BucketHost.Region),
@@ -176,13 +181,16 @@ namespace Stahp.Console
                     {
                         new TableColumn("Contact"),
                     });
-                    rowValues.Add(new Markup(domainHost?.AbuseContact ?? string.Empty));
+                    domainHostRowValues.Add(new Markup(traceHop.DomainHost?.AbuseContact ?? string.Empty));
                     break;
             }
 
             return table
                 .AddColumns(columns.ToArray())
-                .AddRow(rowValues);
+                .AddRow(domainHostRowValues)
+                .AddRow(new Markup("Web"),
+                    new Markup(traceHop.WebHost?.HostName ?? string.Empty),
+                    new Markup(traceHop.WebHost?.HostUrl ?? string.Empty));
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Stahp.Core.HttpResponseProcessing
             _memoryCache = memoryCache;
         }
 
-        private static string GetCacheKey(HttpResponseMessage responseMessage) => $"{nameof(HtmlRedirectProcessor)}_{responseMessage.RequestMessage.RequestUri}";
+        private static string GetCacheKey(HttpResponseMessage responseMessage) => $"{nameof(HtmlRedirectProcessor)}_{responseMessage.RequestMessage!.RequestUri}";
 
         public override async Task<bool> CanProcess(HttpResponseMessage httpResponseMessage)
         {
@@ -66,11 +66,12 @@ namespace Stahp.Core.HttpResponseProcessing
                     .Substring(refreshTag.GetAttributeValue("content", string.Empty)
                     .IndexOf("url=", StringComparison.OrdinalIgnoreCase) + 4);
 
-            return new TraceHop(httpResponseMessage.RequestMessage.RequestUri, httpResponseMessage.StatusCode)
+            return new TraceHop(httpResponseMessage.RequestMessage!.RequestUri!, httpResponseMessage.StatusCode)
             {
                 Redirects = true,
                 RedirectTargetUrl = new Uri(redirectTarget),
-                DomainHost = await DetermineHost(httpResponseMessage.RequestMessage.RequestUri),
+                DomainHost = await DetermineHost(httpResponseMessage.RequestMessage!.RequestUri!),
+                WebHost = await DetermineWebHost(httpResponseMessage.RequestMessage!.RequestUri!),
             };
         }
     }

@@ -27,11 +27,12 @@ namespace Stahp.Core.HttpResponseProcessing
 
         public override async Task<TraceHop> Process(HttpResponseMessage httpResponseMessage)
         {
-            return new TraceHop(httpResponseMessage.RequestMessage.RequestUri, httpResponseMessage.StatusCode)
+            return new TraceHop(httpResponseMessage.RequestMessage!.RequestUri!, httpResponseMessage.StatusCode)
             {
                 Redirects = true,
                 RedirectTargetUrl = httpResponseMessage.Headers.Location,
                 DomainHost = await DetermineHost(httpResponseMessage.RequestMessage.RequestUri),
+                WebHost = await DetermineWebHost(httpResponseMessage.RequestMessage.RequestUri),
             };
         }
     }

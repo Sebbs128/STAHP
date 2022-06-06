@@ -2,6 +2,8 @@
 
 using Stahp.Core.HostTypes;
 
+using System.Net;
+
 using Whois;
 
 namespace Stahp.Core.HttpResponseProcessing
@@ -21,6 +23,15 @@ namespace Stahp.Core.HttpResponseProcessing
         protected async Task<IHost> DetermineHost(Uri requestUri)
         {
             return await _hostFactory.GetHost(requestUri);
+        }
+
+        protected async Task<IHost?> DetermineWebHost(Uri requestUri)
+        {
+            IPHostEntry? dnsHostEntry = await Dns.GetHostEntryAsync(requestUri!.Host);
+
+            return dnsHostEntry is not null
+                    ? await DetermineHost(new Uri($"http://{dnsHostEntry.HostName}"))
+                    : null;
         }
     }
 }

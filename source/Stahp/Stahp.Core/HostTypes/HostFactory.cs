@@ -52,7 +52,12 @@ namespace Stahp.Core.HostTypes
         {
             try
             {
-                WhoisResponse? response = await _whoisClient.LookupAsync(domainName);
+                // TODO: consider possibly using Polly to retry with longer timeouts (to a limit)
+                WhoisRequest request = new(domainName)
+                {
+                    TimeoutSeconds = 120
+                };
+                WhoisResponse? response = await _whoisClient.LookupAsync(request);
 
                 if (response?.Registrar is null)
                 {
