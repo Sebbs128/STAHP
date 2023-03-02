@@ -1,4 +1,5 @@
-﻿using HtmlAgilityPack;
+﻿using AngleSharp;
+using AngleSharp.Dom;
 
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -19,14 +20,16 @@ namespace Stahp.Core.HttpResponseProcessing
     internal class HtmlRedirectProcessor : HttpResponseProcessorBase, IHttpResponseProcessor
     {
         private readonly IMemoryCache _memoryCache;
+        private readonly IConfiguration _anglesharpConfig;
         private static readonly MemoryCacheEntryOptions _cacheEntryOptions = new()
         {
             SlidingExpiration = TimeSpan.FromMinutes(10)
         };
 
-        public HtmlRedirectProcessor(IMemoryCache memoryCache, IHostFactory hostFactory) : base(hostFactory)
+        public HtmlRedirectProcessor(IMemoryCache memoryCache, IConfiguration anglesharpConfig, IHostFactory hostFactory) : base(hostFactory)
         {
             _memoryCache = memoryCache;
+            _anglesharpConfig = anglesharpConfig;
         }
 
         private static string GetCacheKey(HttpResponseMessage responseMessage) => $"{nameof(HtmlRedirectProcessor)}_{responseMessage.RequestMessage!.RequestUri}";
@@ -38,18 +41,18 @@ namespace Stahp.Core.HttpResponseProcessing
 
             // we've either hit the final destination, or
             // the page will redirect via
-            //  - a HTML Meta Refresh tag, or
-            //  - setting the JavaScript window.location property
-            //    TODO: create new IHttpResponseProcessor implementation (JSRedirectProcessor) to handle JavaScript check
-            HtmlDocument htmlDoc = new();
-            htmlDoc.Load(await httpResponseMessage.Content.ReadAsStreamAsync());
+            //  - a HTML Meta Refresh tag (this IHttpResponseProcessor), or
+            //  - setting the JavaScript window.location property (JsRedirectProcessor)
+            IDocument htmlDoc = await BrowsingContext.New(_anglesharpConfig).OpenAsync(async req => 
+                req.Content(await httpResponseMessage.Content.ReadAsStreamAsync()));
 
             // see https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta#attr-http-equiv
             // content attribute format matches "[seconds]; url=[address]" (space between ";" and "url=" is optional
-            HtmlNode? refreshTag = htmlDoc.DocumentNode.Descendants("meta")
-                .FirstOrDefault(node =>
-                    string.Equals(node.GetAttributeValue("http-equiv", string.Empty), "refresh", StringComparison.OrdinalIgnoreCase) &&
-                    node.GetAttributeValue("content", string.Empty).Contains("url=", StringComparison.OrdinalIgnoreCase));
+            IElement? refreshTag = htmlDoc.Head
+                ?.QuerySelectorAll("meta")
+                ?.FirstOrDefault(node =>
+                    string.Equals(node.GetAttribute("http-equiv"), "refresh", StringComparison.OrdinalIgnoreCase) &&
+                    node.GetAttribute("content")?.Contains("url=", StringComparison.OrdinalIgnoreCase) == false);
 
             if (refreshTag is not null)
             {
@@ -60,15 +63,15 @@ namespace Stahp.Core.HttpResponseProcessing
 
         public override async Task<TraceHop> Process(HttpResponseMessage httpResponseMessage)
         {
-            HtmlNode refreshTag = _memoryCache.Get<HtmlNode>(GetCacheKey(httpResponseMessage));
+            IElement refreshTag = _memoryCache.Get<IElement>(GetCacheKey(httpResponseMessage))!;
 
-            string redirectTarget = refreshTag.GetAttributeValue("content", string.Empty)
-                    .Substring(refreshTag.GetAttributeValue("content", string.Empty)
-                    .IndexOf("url=", StringComparison.OrdinalIgnoreCase) + 4);
+            string refreshTagContent = refreshTag.GetAttribute("content")!;
+
+            string redirectTarget = refreshTagContent![(refreshTagContent.IndexOf("url=", StringComparison.OrdinalIgnoreCase) + 4)..];
 
             return new TraceHop(httpResponseMessage.RequestMessage!.RequestUri!, httpResponseMessage.StatusCode)
             {
-                Redirects = true,
+                RedirectType = RedirectType.HtmlMeta,
                 RedirectTargetUrl = new Uri(redirectTarget),
                 DomainHost = await DetermineHost(httpResponseMessage.RequestMessage!.RequestUri!),
                 WebHost = await DetermineWebHost(httpResponseMessage.RequestMessage!.RequestUri!),

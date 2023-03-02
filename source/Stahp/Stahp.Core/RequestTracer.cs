@@ -49,7 +49,7 @@ namespace Stahp.Core
 
         private async Task<TraceHop> GetNextHop(Uri url)
         {
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
+            HttpRequestMessage request = new(HttpMethod.Get, url);
             try
             {
                 _logger.LogInformation("Starting trace for {url}", url);

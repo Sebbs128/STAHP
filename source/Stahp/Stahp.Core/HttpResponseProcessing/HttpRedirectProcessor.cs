@@ -29,10 +29,9 @@ namespace Stahp.Core.HttpResponseProcessing
         {
             return new TraceHop(httpResponseMessage.RequestMessage!.RequestUri!, httpResponseMessage.StatusCode)
             {
-                Redirects = true,
                 RedirectTargetUrl = httpResponseMessage.Headers.Location,
-                DomainHost = await DetermineHost(httpResponseMessage.RequestMessage.RequestUri),
-                WebHost = await DetermineWebHost(httpResponseMessage.RequestMessage.RequestUri),
+                DomainHost = await DetermineHost(httpResponseMessage.RequestMessage.RequestUri!),
+                WebHost = await DetermineWebHost(httpResponseMessage.RequestMessage.RequestUri!),
             };
         }
     }

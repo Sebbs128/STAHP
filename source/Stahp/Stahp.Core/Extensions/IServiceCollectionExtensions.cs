@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AngleSharp;
+
+using Microsoft.Extensions.DependencyInjection;
 
 using Stahp.Core.ExceptionProcessing;
 using Stahp.Core.HostTypes;
@@ -18,18 +20,28 @@ namespace Stahp.Core
                 {
                     AllowAutoRedirect = false
                 });
+
             return services
                 .AddMemoryCache()
                 .AddTransient<IHostFactory, HostFactory>()
+                .AddAngleSharp()
                 .AddHttpResponseProcessors()
                 .AddExceptionProcessors()
                 .AddTransient(_ => new WhoisLookup())
                 .AddTransient<IRequestTracer, RequestTracer>();
         }
 
+        private static IServiceCollection AddAngleSharp(this IServiceCollection services)
+        {
+            return services.AddSingleton(Configuration.Default
+                .WithJs()
+                .WithDefaultLoader());
+        }
+
         private static IServiceCollection AddHttpResponseProcessors(this IServiceCollection services)
         {
             return services
+                .AddTransient<IHttpResponseProcessor, JsRedirectProcessor>()
                 .AddTransient<IHttpResponseProcessor, HtmlRedirectProcessor>()
                 .AddTransient<IHttpResponseProcessor, HttpRedirectProcessor>()
                 // DefaultHttpResponseProcessor must be added last, as its CanProcess() will always return true

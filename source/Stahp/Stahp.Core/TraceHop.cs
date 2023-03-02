@@ -8,7 +8,8 @@ namespace Stahp.Core
     {
         public Uri Url { get; set; }
         public HttpStatusCode? HttpStatusCode { get; set; }
-        public bool Redirects { get; set; }
+        public RedirectType RedirectType { get; set; }
+        public bool Redirects => RedirectType != RedirectType.None;
 
         public string? ErrorMessage { get; set; }
 
@@ -31,6 +32,10 @@ namespace Stahp.Core
         public TraceHop(Uri url, HttpStatusCode httpStatusCode) : this(url)
         {
             HttpStatusCode = httpStatusCode;
+            RedirectType =
+                httpStatusCode >= System.Net.HttpStatusCode.Moved && httpStatusCode <= System.Net.HttpStatusCode.PermanentRedirect
+                ? RedirectType.Http
+                : RedirectType.None;
         }
 
         public TraceHop(Uri url, Exception exception) : this(url)
