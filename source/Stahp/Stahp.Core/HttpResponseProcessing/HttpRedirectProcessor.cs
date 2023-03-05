@@ -14,7 +14,9 @@ namespace Stahp.Core.HttpResponseProcessing
         {
             return httpResponseMessage.StatusCode switch
             {
-                >= HttpStatusCode.MovedPermanently and <= HttpStatusCode.PermanentRedirect => new TraceHop(httpResponseMessage.RequestMessage!.RequestUri!, httpResponseMessage.StatusCode)
+                >= HttpStatusCode.MovedPermanently and 
+                <= HttpStatusCode.PermanentRedirect and 
+                not HttpStatusCode.Unused => new TraceHop(httpResponseMessage.RequestMessage!.RequestUri!, httpResponseMessage.StatusCode)
                 {
                     RedirectTargetUrl = httpResponseMessage.Headers.Location,
                     DomainHost = await DetermineHost(httpResponseMessage.RequestMessage.RequestUri!),
