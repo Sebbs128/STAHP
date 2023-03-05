@@ -17,8 +17,7 @@ namespace Stahp.Core.HttpResponseProcessing
             _hostFactory = hostFactory;
         }
 
-        public abstract Task<bool> CanProcess(HttpResponseMessage httpResponseMessage);
-        public abstract Task<TraceHop> Process(HttpResponseMessage httpResponseMessage);
+        public abstract Task<TraceHop?> Process(HttpResponseMessage httpResponseMessage);
 
         protected async Task<IHost> DetermineHost(Uri requestUri)
         {

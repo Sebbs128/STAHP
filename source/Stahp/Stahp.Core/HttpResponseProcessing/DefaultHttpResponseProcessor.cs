@@ -1,14 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-using Stahp.Core.HostTypes;
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Whois;
+﻿using Stahp.Core.HostTypes;
 
 namespace Stahp.Core.HttpResponseProcessing
 {
@@ -18,12 +8,7 @@ namespace Stahp.Core.HttpResponseProcessing
         {
         }
 
-        public override Task<bool> CanProcess(HttpResponseMessage httpResponseMessage)
-        {
-            return Task.FromResult(true);
-        }
-
-        public override async Task<TraceHop> Process(HttpResponseMessage httpResponseMessage)
+        public override async Task<TraceHop?> Process(HttpResponseMessage httpResponseMessage)
         {
             return new TraceHop(httpResponseMessage.RequestMessage!.RequestUri!, httpResponseMessage.StatusCode)
             {
