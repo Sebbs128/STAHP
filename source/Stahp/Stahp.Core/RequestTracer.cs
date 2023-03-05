@@ -2,27 +2,22 @@
 using Microsoft.Extensions.Logging;
 
 using Stahp.Core.ExceptionProcessing;
-using Stahp.Core.HttpResponseProcessing;
-
-using System.Net.Sockets;
+using Stahp.Core.HttpResponseProcessing.Pipeline;
 
 namespace Stahp.Core
 {
-    public class RequestTracer : IRequestTracer
+    internal class RequestTracer : IRequestTracer
     {
         private readonly HttpClient _httpClient;
-        private readonly IEnumerable<IHttpResponseProcessor> _httpResponseProcessors;
+        private readonly HttpResponseProcessorPipelineFactory _pipelineFactory;
         private readonly IEnumerable<IExceptionProcessor> _exceptionProcessors;
         private readonly ILogger<RequestTracer> _logger;
 
-        public RequestTracer(IEnumerable<IHttpResponseProcessor> httpResponseProcessors, IEnumerable<IExceptionProcessor> exceptionProcessors, IHttpClientFactory httpClientFactory, ILogger<RequestTracer> logger)
+        public RequestTracer(HttpResponseProcessorPipelineFactory pipelineFactory, IEnumerable<IExceptionProcessor> exceptionProcessors, HttpClient httpClient, ILogger<RequestTracer> logger)
         {
-            // the resolved HttpClient when registered as a typed client doesn't seem to obey the primary http client handler configuration
-            //  when using constructor injection
-            // retrieving via IHttpClientFactory does work though
-            _httpClient = httpClientFactory.CreateClient(nameof(RequestTracer));
-            _httpResponseProcessors = httpResponseProcessors;
+            _pipelineFactory = pipelineFactory;
             _exceptionProcessors = exceptionProcessors;
+            _httpClient = httpClient;
             _logger = logger;
         }
 
@@ -32,7 +27,13 @@ namespace Stahp.Core
             Uri nextUrl = url;
             do
             {
-                TraceHop hop = await GetNextHop(nextUrl);
+                TraceHop? hop = await GetNextHop(nextUrl);
+
+                if (hop is null)
+                {
+                    reachedEnd = true;
+                    continue;
+                }
 
                 yield return hop;
 
@@ -47,21 +48,16 @@ namespace Stahp.Core
             } while (!reachedEnd);
         }
 
-        private async Task<TraceHop> GetNextHop(Uri url)
+        private async Task<TraceHop?> GetNextHop(Uri url)
         {
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
+            HttpRequestMessage request = new(HttpMethod.Get, url);
             try
             {
                 _logger.LogInformation("Starting trace for {url}", url);
                 HttpResponseMessage response = await _httpClient.SendAsync(request);
 
-                foreach (var processor in _httpResponseProcessors)
-                {
-                    if (await processor.CanProcess(response))
-                    {
-                        return await processor.Process(response);
-                    }
-                }
+                var initialProcessor = _pipelineFactory.Create();
+                return await initialProcessor.Process(response);
             }
             catch (Exception ex)
             {
