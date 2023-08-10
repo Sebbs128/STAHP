@@ -1,14 +1,7 @@
-﻿using Moq;
-using Stahp.Core.HostTypes;
+﻿using Stahp.Core.HostTypes;
 using Stahp.Core.HttpResponseProcessing;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Stahp.Core.Tests
 {
@@ -21,22 +14,9 @@ namespace Stahp.Core.Tests
 
         public HttpRedirectProcessorTests()
         {
-            var hostFactoryMock = new Mock<IHostFactory>();
-            hostFactoryMock.Setup(f => f.GetHost(It.IsAny<Uri>()))
-                .Returns<Uri>(uri =>
-                {
-                    var host = new Mock<IHost>();
+            var hostFactoryMock = Mocks.HostFactory;
 
-                    host.SetupGet(h => h.HostName)
-                        .Returns(uri.Host);
-
-                    host.SetupGet(h => h.HostUrl)
-                        .Returns(uri.ToString());
-
-                    return Task.FromResult(host.Object);
-                });
-
-            _processor = new HttpRedirectProcessor(hostFactoryMock.Object);
+            _processor = new HttpRedirectProcessor(hostFactoryMock);
         }
 
         [TestMethod]

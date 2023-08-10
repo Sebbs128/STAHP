@@ -1,8 +1,5 @@
 using AngleSharp;
 
-using Moq;
-
-using Stahp.Core.HostTypes;
 using Stahp.Core.HttpResponseProcessing;
 
 using System.Net;
@@ -29,22 +26,9 @@ namespace Stahp.Core.Tests
         {
             IConfiguration config = Configuration.Default;
 
-            var hostFactoryMock = new Mock<IHostFactory>();
-            hostFactoryMock.Setup(f => f.GetHost(It.IsAny<Uri>()))
-                .Returns<Uri>(uri =>
-                {
-                    var host = new Mock<IHost>();
+            var hostFactoryMock = Mocks.HostFactory;
 
-                    host.SetupGet(h => h.HostName)
-                        .Returns(uri.Host);
-                    
-                    host.SetupGet(h => h.HostUrl)
-                        .Returns(uri.ToString());
-                    
-                    return Task.FromResult(host.Object);
-                });
-
-            _processor = new HtmlRedirectProcessor(config, hostFactoryMock.Object);
+            _processor = new HtmlRedirectProcessor(config, hostFactoryMock);
         }
 
         [TestMethod]
