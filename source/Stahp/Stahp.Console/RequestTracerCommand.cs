@@ -85,7 +85,7 @@ namespace Stahp.Console
 
         private CancellationTokenSource DisplayCancellableStatusIndicator()
         {
-            CancellationTokenSource cts = new CancellationTokenSource();
+            CancellationTokenSource cts = new();
             // don't await, because the caller needs to tell the status indicator when to stop
             _console.Status()
                 .StartAsync("Tracing web requests...", async ctx =>
@@ -117,11 +117,12 @@ namespace Stahp.Console
 
             if (traceHop.Redirects)
             {
-                _console.Markup(traceHop.HttpStatusCode switch
+                _console.Markup(traceHop.RedirectType switch
                 {
-                    (>= HttpStatusCode.Moved) and (<= HttpStatusCode.PermanentRedirect) =>
-                        $"HTTP {(int)traceHop.HttpStatusCode} ({traceHop.HttpStatusCode})",
-                    _ => "HTML"
+                    RedirectType.Http => $"HTTP {(int)traceHop.HttpStatusCode!} ({traceHop.HttpStatusCode})",
+                    RedirectType.HtmlMeta => "HTML",
+                    RedirectType.JsHref => "JavaScript",
+                    _ => ""
                 });
                 _console.MarkupLine(" Redirects to...");
 
@@ -129,19 +130,19 @@ namespace Stahp.Console
             }
         }
 
-        private IRenderable PrintHosts(TraceHop traceHop)
+        private static IRenderable PrintHosts(TraceHop traceHop)
         {
             Table? table = new Table()
                 .Border(TableBorder.Minimal);
 
-            List<TableColumn>? columns = new List<TableColumn>()
+            List<TableColumn>? columns = new()
             {
                 new TableColumn("Host Type"),
                 new TableColumn("Host"),
                 new TableColumn("Host Site") { NoWrap = true },
             };
 
-            List<IRenderable>? domainHostRowValues = new List<IRenderable>()
+            List<IRenderable>? domainHostRowValues = new()
             {
                 new Markup("Domain"),
                 new Markup(traceHop.DomainHost?.HostName ?? string.Empty),
